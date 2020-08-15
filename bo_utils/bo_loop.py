@@ -57,11 +57,11 @@ class MainLoop(object):
 
     @target.setter
     def target(self, new_target):
-        if not isinstance()
         required_attributes = {"fit", "predict"}
         for attr in required_attributes:
             if not hasattr(new_target, attr):
-                raise TypeError("The given target model does not support '%s'" % attr)
+                raise AttributeError("The given target model of type %s does not support '%s'" %
+                                     (type(new_target), attr))
 
         self._target = new_target
 
