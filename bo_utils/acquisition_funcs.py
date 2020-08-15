@@ -6,6 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# TODO: Determine interface for multi-variate evaluation, compatibility with predict
 class AcquisitionFunctionBaseClass(ABC):
     """
     Abstract Base Class for specifying the interface of a generic Acquisition Function to be used in a BO loop.
@@ -32,7 +33,7 @@ class PI(AcquisitionFunctionBaseClass):
             Exploration-exploitation trade-off parameter.
         :param for_minimization: bool
             Flag to indicate if the returned value is to be used for minimization or maximization. Essentially, when
-            for_minimization is True, the calculated value of PI is negated before returning.
+            for_minimization is True, the calculated value is negated before returning.
         """
         super(PI, self).__init__()
         self.epsilon = epsilon
@@ -61,7 +62,7 @@ class EI(AcquisitionFunctionBaseClass):
         """
         :param for_minimization: bool
             Flag to indicate if the returned value is to be used for minimization or maximization. Essentially, when
-            for_minimization is True, the calculated value of PI is negated before returning.
+            for_minimization is True, the calculated value is negated before returning.
         """
         super(EI, self).__init__()
         self.for_minimization = for_minimization
