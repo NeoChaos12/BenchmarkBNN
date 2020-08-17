@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# Branin function definitions code taken directly from dragonfly: https://github.com/dragonfly/dragonfly
+# Branin function definitions code adapted from dragonfly: https://github.com/dragonfly/dragonfly
 def __branin_with_params(x, a, b, c, r, s, t):
   """ Computes the Branin function. """
   x1 = x[0]
@@ -42,5 +42,5 @@ __parameters = [
     cs.UniformFloatHyperparameter("x2", lower=0, upper=15)
 ]
 
-branin = SyntheticBenchmark(ofunc=__branin, parameters=__parameters)
-branin_mf = SyntheticBenchmark(ofunc=__branin_z_x, parameters=__parameters)
+branin = SyntheticBenchmark(ofunc=__branin, parameters=__parameters, name="Branin")
+branin_mf = SyntheticBenchmark(ofunc=__branin_z_x, parameters=__parameters, name="BraninMF")

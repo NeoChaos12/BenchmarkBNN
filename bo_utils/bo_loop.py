@@ -4,6 +4,7 @@ from typing import Dict, Union, Callable
 from .acquisition_funcs import AcquisitionFunctionBaseClass, EI
 import ConfigSpace as cs
 from scipy.optimize import minimize
+from ..benchmarks import BenchmarkBaseClass
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +36,14 @@ class MainLoop(object):
     # TODO: Implement HPOlib2 benchmarks support, modify docstring
 
     def __init__(self, target: object, acquisition: AcquisitionFunctionBaseClass,
-                 benchmark: Callable):
+                 benchmark: BenchmarkBaseClass):
         """
 
         :param target: object
             The target model to be evaluated and benchmarked.
         :param acquisition: AcquisitionFunctionBaseClass
             The acquisition function to be used.
-        :param benchmark: Callable
+        :param benchmark: BenchmarkBaseClass
             The objective benchmark to be used for evaluating the target.
         """
 
@@ -117,13 +118,13 @@ class MainLoop(object):
             if idx < burn_in:
                 # Generate an initial dataset
                 X.append(search_space.sample_configuration().get_array())
-                y.append(self.benchmark(X[-1]))
+                y.append(self.benchmark(X[-1])["function_value"])
             else:
                 # Perform BO using the current dataset
                 self.target.fit(X, y)
                 candidate = minimize(self.acquisition, x0=incumbent[0], bounds=search_bounds)
                 # TODO: Update to HPOlib2 interface, currently using placeholders.
-                yval = self.benchmark(candidate)
+                yval = self.benchmark(candidate)["function_value"]
                 X.append(candidate)
                 y.append(yval)
             # Our convention: Incumbent has to have already been evaluated (no "theoretically sound" incumbents)

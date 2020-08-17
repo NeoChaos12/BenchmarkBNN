@@ -16,7 +16,7 @@ class BenchmarkBaseClass(ABC):
         raise NotImplementedError("This method must be either implemented by sub-classing BenchmarkBaseClass or "
                                   "otherwise implemented by the object being used as a Benchmark.")
 
-    def __call__(self) -> Dict:
+    def __call__(self, *args, **kwargs) -> Dict:
         """ Upon being called, the benchmark must return a dictionary containing a key-value pair for the key
         'function_value'. """
         raise NotImplementedError("This method must be either implemented by sub-classing BenchmarkBaseClass or "
@@ -24,24 +24,27 @@ class BenchmarkBaseClass(ABC):
 
 
 class SyntheticBenchmark(BenchmarkBaseClass):
-    """A convenience class that makes it easy to specify synthetic benchmark objectives. Each Benchmark should be an
+    """A convenience class that makes it easy to construct synthetic benchmark objectives. Each Benchmark should be an
     instance of this class with the appropriate parameters."""
 
-    def __init__(self, ofunc: Callable, parameters: List = None):
+    def __init__(self, ofunc: Callable, parameters: List = None, name="SyntheticBenchmark"):
+        super().__init__()
         self._ofunc = ofunc
         self.parameters = [] if parameters is None else parameters
+        self.name = name
         logger.debug("Synthetic Benchmark initialized.")
 
-    def objective_function(self, *args, **kwargs):
+    def __objective_function(self, *args, **kwargs):
         return self._ofunc(*args, **kwargs)
 
     def get_configuration_space(self, seed=None) -> cs.ConfigurationSpace:
-        cspace = cs.ConfigurationSpace(name=self.__name__, seed=seed)
+        cspace = cs.ConfigurationSpace(name=self.name, seed=seed)
         cspace.add_hyperparameters(self.parameters)
+        logger.debug("Constructed Configuration Space %s:\n" % str(cspace))
         return cspace
 
     def __call__(self, *args, **kwargs):
-        return {"function_value": self.objective_function(*args, **kwargs)}
+        return {"function_value": self.__objective_function(*args, **kwargs)}
 
 
 placeholder_benchmark = SyntheticBenchmark(ofunc=lambda x: x, parameters=[cs.UniformFloatHyperparameter("x", lower=0.,
