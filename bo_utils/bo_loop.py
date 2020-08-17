@@ -100,7 +100,7 @@ class MainLoop(object):
             burn_in = floor(burn_in * n_iterations)
 
         if not isinstance(burn_in, int):
-            raise TypeError("The number of burn in steps to be take must be an integer. Received type %s" %
+            raise TypeError("The number of burn in steps to be taken must be an integer. Received type %s" %
                             type(burn_in))
 
         logger.info("Running main BO loop for %d iterations with %d burn in steps, using the search space:\n%s" %
