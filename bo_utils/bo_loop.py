@@ -28,12 +28,13 @@ class MainLoop(object):
 
     The benchmark should be a benchmark object from HPOlib2, which when called returns a dictionary containing
     the requisite benchmark process results. More specifically, it must support support a callable attribute
-    'get_fidelity_space' which returns a ConfigSpace.ConfigurationSpace object which shall be used to read the domain
-    of the BO search space, as well as be callable itself, thus returning a dictionary with various result values.
+    'get_configuration_space' which returns a ConfigSpace.ConfigurationSpace object which shall be used to read the
+    domain of the BO search space, as well as be callable itself, thus returning a dictionary with various result
+    values.
     """
     # TODO: Implement HPOlib2 benchmarks support, modify docstring
 
-    def __init__(self, target: object, cspace: cs.ConfigurationSpace, acquisition: AcquisitionFunctionBaseClass,
+    def __init__(self, target: object, acquisition: AcquisitionFunctionBaseClass,
                  benchmark: Callable):
         """
 
@@ -46,7 +47,6 @@ class MainLoop(object):
         """
 
         self.target = target
-        self.cspace = cspace
         self.acquisition = acquisition
         self.benchmark = benchmark
         logger.debug("Initialized main BO loop.")
@@ -89,12 +89,25 @@ class MainLoop(object):
         #
 
         search_space: cs.ConfigurationSpace = self.benchmark.get_config_space()
+        search_bounds = [(p.lower, p.upper) for p in search_space.get_hyperparameters()]
+
         if isinstance(burn_in, float):
-            if burn_in < 0.0 or burn_in > 1.0:
-                raise ValueError("When specifying a fraction, burn_in must belong to the closed interval [0.0, 1.0], "
-                                 "was %f." % burn_in)
+            # if burn_in < 0.0 or burn_in > 1.0:
+            #     raise ValueError("When specifying a fraction, burn_in must belong to the closed interval [0.0, 1.0], "
+            #                      "was %f." % burn_in)
             from math import floor
             burn_in = floor(burn_in * n_iterations)
+
+        if not isinstance(burn_in, int):
+            raise TypeError("The number of burn in steps to be take must be an integer. Received type %s" %
+                            type(burn_in))
+
+        logger.info("Running main BO loop for %d iterations with %d burn in steps, using the search space:\n%s" %
+                    (n_iterations, burn_in, str(search_space)))
+
+        if burn_in <= 0 or burn_in >= n_iterations:
+            logger.warning("Number of burn in steps should ideally be in the open interval (0, n_iterations), was %d" %
+                           burn_in)
 
         X = []
         y = []
@@ -105,15 +118,15 @@ class MainLoop(object):
                 # Generate an initial dataset
                 X.append(search_space.sample_configuration().get_array())
                 y.append(self.benchmark(X[-1]))
-                # Keep track of the incumbent nonetheless
-                incumbent = (X[-1], y[-1]) if incumbent is None or y[-1] < incumbent[1] else incumbent
-                continue
-
-            self.target.fit(X, y)
-            # TODO: Flesh out
-            # candidate = minimize(self.acquisition, x0=incumbent[0])
-            # yval = self.benchmark(candidate)
-            # X.append(candidate)
-            # y.append(yval)
+            else:
+                # Perform BO using the current dataset
+                self.target.fit(X, y)
+                candidate = minimize(self.acquisition, x0=incumbent[0], bounds=search_bounds)
+                # TODO: Update to HPOlib2 interface, currently using placeholders.
+                yval = self.benchmark(candidate)
+                X.append(candidate)
+                y.append(yval)
+            # Our convention: Incumbent has to have already been evaluated (no "theoretically sound" incumbents)
+            incumbent = (X[-1], y[-1]) if incumbent is None or y[-1] < incumbent[1] else incumbent
 
         logger.info("Finished BO loop. Found final incumbent: %s" % str(incumbent))
